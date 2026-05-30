@@ -55,9 +55,10 @@ def test_load_image_file_not_found():
 
 
 def test_load_image_url_error(httpx_mock):
+    import httpx as _httpx
     from analyzer import load_image
     httpx_mock.add_response(url="https://example.com/missing.png", status_code=404)
-    with pytest.raises(Exception):
+    with pytest.raises(_httpx.HTTPStatusError):
         load_image("https://example.com/missing.png")
 
 
@@ -179,3 +180,17 @@ def test_analyze_handles_not_a_blot_response(mocker):
 
     assert isinstance(result, ErrorResult)
     assert result.error_type == "not_a_blot"
+
+
+def test_analyze_returns_error_on_missing_api_key(mocker):
+    from analyzer import analyze
+    from schema import AnalysisInput, ErrorResult
+
+    mocker.patch.dict("os.environ", {}, clear=True)
+
+    inp = AnalysisInput(image_source=str(FIXTURE_PATH))
+    result = analyze(inp)
+
+    assert isinstance(result, ErrorResult)
+    assert result.error_type == "api_error"
+    assert "GOOGLE_API_KEY" in result.detail

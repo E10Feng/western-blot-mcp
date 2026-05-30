@@ -33,7 +33,7 @@ Loading controls confirm equal protein loading across lanes. Critical pitfalls d
 - GAPDH is invalid in: hypoxia/ischemia studies (GAPDH is upregulated by hypoxia), aging studies (GAPDH decreases with age), diabetes/metabolic stress studies (GAPDH elevated). Flag loading_control_inappropriate if the experimental context matches any of these.
 - β-actin and tubulin are unreliable for cross-tissue comparisons, cell cycle studies, and migration studies.
 - If loading control bands appear saturated (uniform brightness, no gradation between bands), flag as loading_control_saturated — saturation renders normalization invalid, not just imprecise.
-- If the loading control MW is within ~10 kDa of the target protein's expected MW, flag unequal_loading with a note about MW overlap.
+- If the loading control MW is within ~10 kDa of the target protein's expected MW, flag loading_control_inappropriate with a note about MW overlap (this is a design issue, not a loading quantity issue).
 - If no loading control is visible, note its absence without assuming equal loading.
 
 ### Image Quality — Flag All That Apply

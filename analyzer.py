@@ -61,14 +61,14 @@ def _detect_mime_from_magic(data: bytes) -> str:
 
 def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
     """Call Gemini to analyze a western blot image and return structured results."""
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        return ErrorResult(error_type="api_error", detail="GOOGLE_API_KEY environment variable is not set")
+
     try:
         image_bytes, mime_type = load_image(inp.image_source)
     except Exception as e:
         return ErrorResult(error_type="image_unreadable", detail=str(e))
-
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        return ErrorResult(error_type="api_error", detail="GOOGLE_API_KEY environment variable is not set")
 
     client = genai.Client(api_key=api_key)
     model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
@@ -87,6 +87,9 @@ def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
         )
     except Exception as e:
         return ErrorResult(error_type="api_error", detail=str(e))
+
+    if not response.text:
+        return ErrorResult(error_type="api_error", detail="Gemini returned an empty response (possible safety filter or content block)")
 
     try:
         raw = json.loads(response.text)
