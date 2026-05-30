@@ -1,8 +1,15 @@
 import base64
+import json
 import mimetypes
+import os
 from pathlib import Path
 
 import httpx
+from google import genai
+from google.genai import types
+
+from prompts import SYSTEM_PROMPT, build_user_prompt
+from schema import AnalysisInput, AnalysisResult, ErrorResult
 
 
 def load_image(image_source: str) -> tuple[bytes, str]:
@@ -50,3 +57,40 @@ def _detect_mime_from_magic(data: bytes) -> str:
     if data[:4] in (b"II*\x00", b"MM\x00*"):
         return "image/tiff"
     return "image/jpeg"
+
+
+def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
+    """Call Gemini to analyze a western blot image and return structured results."""
+    try:
+        image_bytes, mime_type = load_image(inp.image_source)
+    except Exception as e:
+        return ErrorResult(error_type="image_unreadable", detail=str(e))
+
+    client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+    model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                types.Part.from_text(text=build_user_prompt(inp)),
+            ],
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                response_mime_type="application/json",
+            ),
+        )
+    except Exception as e:
+        return ErrorResult(error_type="api_error", detail=str(e))
+
+    try:
+        raw = json.loads(response.text)
+        if raw.get("error"):
+            return ErrorResult(**raw)
+        return AnalysisResult(**raw)
+    except Exception as e:
+        return ErrorResult(
+            error_type="parse_error",
+            detail=f"Could not parse LLM response: {e}",
+        )
