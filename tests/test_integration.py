@@ -3,9 +3,9 @@ import pytest
 from schema import AnalysisResult, ErrorResult
 
 
-# Using httpbin.org as a reliable public image source
-# (The specific western blot image URLs from Wikimedia were unavailable at test writing time)
-BLOT_URL = "https://httpbin.org/image/png"
+# Open-access western blot figure from: "Blind spots on western blots" (PLOS ONE, 2022)
+# doi: 10.1371/journal.pone.0273823
+BLOT_URL = "https://journals.plos.org/plosone/article/figure/image?size=medium&id=10.1371/journal.pone.0273823.g001"
 
 
 @pytest.mark.skipif(
