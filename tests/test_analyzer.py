@@ -56,3 +56,13 @@ def test_load_image_url_error(httpx_mock):
     httpx_mock.add_response(url="https://example.com/missing.png", status_code=404)
     with pytest.raises(Exception):
         load_image("https://example.com/missing.png")
+
+
+def test_load_image_from_raw_base64_jpeg():
+    from analyzer import load_image
+    # JPEG magic bytes: \xFF\xD8\xFF\xE0 followed by padding
+    jpeg_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+    jpeg_b64 = base64.b64encode(jpeg_bytes).decode()
+    image_bytes, mime_type = load_image(jpeg_b64)
+    assert image_bytes == jpeg_bytes
+    assert mime_type == "image/jpeg"
