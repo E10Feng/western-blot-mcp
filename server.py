@@ -18,10 +18,17 @@ def analyze_western_blot(
     """
     Analyze a western blot image. Returns structured band detection, lane QC,
     image quality flags, and step-by-step reasoning so researchers can validate
-    every conclusion. Powered by Gemini 2.0 Flash (requires GOOGLE_API_KEY).
+    every conclusion. Powered by Gemini (requires GOOGLE_API_KEY).
+
+    IMPORTANT: The server runs on the host OS (Windows), not in your Linux
+    environment. Do NOT pass Linux file paths (e.g. /home/claude/...) — the
+    server cannot see them. Instead, pass the image as base64:
+      image_data=$(base64 -w 0 /path/to/image.png)
+    Then pass $image_data as image_source. URLs also work directly.
 
     Args:
-        image_source: File path, HTTP/HTTPS URL, or base64-encoded image data.
+        image_source: Base64-encoded image data (preferred), HTTP/HTTPS URL, or
+            a Windows file path if the image is on the Windows filesystem.
         antibody_target: Protein being probed (e.g. 'p53'). Improves accuracy.
         expected_kda: Expected molecular weight in kDa. Improves accuracy.
         lane_labels: Ordered lane names left to right (e.g. ['Control', 'Treated']).
