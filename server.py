@@ -26,6 +26,10 @@ def analyze_western_blot(
       image_data=$(base64 -w 0 /path/to/image.png)
     Then pass $image_data as image_source. URLs also work directly.
 
+    Provider is set via the MODEL env var (e.g. "anthropic/claude-sonnet-4-6",
+    "openai/gpt-4o", "gemini/gemini-3.1-flash-lite", "deepseek/deepseek-chat").
+    The model must support vision/image inputs.
+
     Args:
         image_source: Base64-encoded image data (preferred), HTTP/HTTPS URL, or
             a Windows file path if the image is on the Windows filesystem.

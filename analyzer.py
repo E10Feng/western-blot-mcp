@@ -5,8 +5,7 @@ import os
 from pathlib import Path
 
 import httpx
-from google import genai
-from google.genai import types
+import litellm
 
 from prompts import SYSTEM_PROMPT, build_user_prompt
 from schema import AnalysisInput, AnalysisResult, ErrorResult
@@ -60,39 +59,47 @@ def _detect_mime_from_magic(data: bytes) -> str:
 
 
 def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
-    """Call Gemini to analyze a western blot image and return structured results."""
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        return ErrorResult(error_type="api_error", detail="GOOGLE_API_KEY environment variable is not set")
-
+    """Analyze a western blot image using the configured LLM provider."""
     try:
         image_bytes, mime_type = load_image(inp.image_source)
     except Exception as e:
         return ErrorResult(error_type="image_unreadable", detail=str(e))
 
-    client = genai.Client(api_key=api_key)
-    model = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
+    model = os.environ.get("MODEL", "gemini/gemini-3.1-flash-lite")
+    image_b64 = base64.b64encode(image_bytes).decode()
+
+    # Allow GOOGLE_API_KEY as an alias for GEMINI_API_KEY (backward compatibility)
+    if not os.environ.get("GEMINI_API_KEY") and os.environ.get("GOOGLE_API_KEY"):
+        os.environ["GEMINI_API_KEY"] = os.environ["GOOGLE_API_KEY"]
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime_type};base64,{image_b64}"},
+                },
+                {"type": "text", "text": build_user_prompt(inp)},
+            ],
+        },
+    ]
 
     try:
-        response = client.models.generate_content(
-            model=model,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                types.Part.from_text(text=build_user_prompt(inp)),
-            ],
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                response_mime_type="application/json",
-            ),
-        )
+        response = litellm.completion(model=model, messages=messages)
     except Exception as e:
         return ErrorResult(error_type="api_error", detail=str(e))
 
-    if not response.text:
-        return ErrorResult(error_type="api_error", detail="Gemini returned an empty response (possible safety filter or content block)")
+    content = response.choices[0].message.content
+    if not content:
+        return ErrorResult(
+            error_type="api_error",
+            detail="Provider returned an empty response (possible safety filter or content block)",
+        )
 
     try:
-        raw = json.loads(response.text)
+        raw = json.loads(content)
         if raw.get("error"):
             return ErrorResult(**raw)
         return AnalysisResult(**raw)

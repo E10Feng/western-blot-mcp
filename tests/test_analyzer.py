@@ -64,7 +64,6 @@ def test_load_image_url_error(httpx_mock):
 
 def test_load_image_from_raw_base64_jpeg():
     from analyzer import load_image
-    # JPEG magic bytes: \xFF\xD8\xFF\xE0 followed by padding
     jpeg_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 100
     jpeg_b64 = base64.b64encode(jpeg_bytes).decode()
     image_bytes, mime_type = load_image(jpeg_b64)
@@ -89,8 +88,9 @@ VALID_ANALYSIS_RESPONSE = {
 
 
 def _make_mock_response(payload: dict) -> MagicMock:
+    """Build an OpenAI-style mock response as returned by litellm.completion."""
     mock = MagicMock()
-    mock.text = json.dumps(payload)
+    mock.choices[0].message.content = json.dumps(payload)
     return mock
 
 
@@ -98,10 +98,8 @@ def test_analyze_returns_analysis_result(mocker):
     from analyzer import analyze
     from schema import AnalysisInput, AnalysisResult
 
-    mocker.patch("analyzer.genai.Client").return_value.models.generate_content.return_value = (
-        _make_mock_response(VALID_ANALYSIS_RESPONSE)
-    )
-    mocker.patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"})
+    mocker.patch("analyzer.litellm.completion", return_value=_make_mock_response(VALID_ANALYSIS_RESPONSE))
+    mocker.patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "MODEL": "gemini/gemini-3.1-flash-lite"})
 
     inp = AnalysisInput(image_source=str(FIXTURE_PATH))
     result = analyze(inp)
@@ -113,11 +111,9 @@ def test_analyze_returns_analysis_result(mocker):
     assert result.bands[0].lane == "Treated"
 
 
-def test_analyze_returns_error_on_image_unreadable(mocker):
+def test_analyze_returns_error_on_image_unreadable():
     from analyzer import analyze
     from schema import AnalysisInput, ErrorResult
-
-    mocker.patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"})
 
     inp = AnalysisInput(image_source="/nonexistent/blot.png")
     result = analyze(inp)
@@ -130,10 +126,8 @@ def test_analyze_returns_error_on_api_failure(mocker):
     from analyzer import analyze
     from schema import AnalysisInput, ErrorResult
 
-    mocker.patch("analyzer.genai.Client").return_value.models.generate_content.side_effect = (
-        Exception("API rate limit exceeded")
-    )
-    mocker.patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"})
+    mocker.patch("analyzer.litellm.completion", side_effect=Exception("API rate limit exceeded"))
+    mocker.patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "MODEL": "gemini/gemini-3.1-flash-lite"})
 
     inp = AnalysisInput(image_source=str(FIXTURE_PATH))
     result = analyze(inp)
@@ -147,10 +141,10 @@ def test_analyze_returns_error_on_malformed_response(mocker):
     from analyzer import analyze
     from schema import AnalysisInput, ErrorResult
 
-    bad_response = MagicMock()
-    bad_response.text = "this is not json {"
-    mocker.patch("analyzer.genai.Client").return_value.models.generate_content.return_value = bad_response
-    mocker.patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"})
+    bad_mock = MagicMock()
+    bad_mock.choices[0].message.content = "this is not json {"
+    mocker.patch("analyzer.litellm.completion", return_value=bad_mock)
+    mocker.patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "MODEL": "gemini/gemini-3.1-flash-lite"})
 
     inp = AnalysisInput(image_source=str(FIXTURE_PATH))
     result = analyze(inp)
@@ -170,10 +164,8 @@ def test_analyze_handles_not_a_blot_response(mocker):
         "reasoning_steps": [],
         "narrative": None,
     }
-    mocker.patch("analyzer.genai.Client").return_value.models.generate_content.return_value = (
-        _make_mock_response(not_blot_response)
-    )
-    mocker.patch.dict("os.environ", {"GOOGLE_API_KEY": "test-key"})
+    mocker.patch("analyzer.litellm.completion", return_value=_make_mock_response(not_blot_response))
+    mocker.patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "MODEL": "gemini/gemini-3.1-flash-lite"})
 
     inp = AnalysisInput(image_source=str(FIXTURE_PATH))
     result = analyze(inp)
@@ -182,15 +174,15 @@ def test_analyze_handles_not_a_blot_response(mocker):
     assert result.error_type == "not_a_blot"
 
 
-def test_analyze_returns_error_on_missing_api_key(mocker):
+def test_analyze_returns_error_on_api_failure_no_key(mocker):
     from analyzer import analyze
     from schema import AnalysisInput, ErrorResult
 
-    mocker.patch.dict("os.environ", {}, clear=True)
+    mocker.patch("analyzer.litellm.completion", side_effect=Exception("No API key provided"))
+    mocker.patch.dict("os.environ", {"MODEL": "gemini/gemini-3.1-flash-lite"}, clear=True)
 
     inp = AnalysisInput(image_source=str(FIXTURE_PATH))
     result = analyze(inp)
 
     assert isinstance(result, ErrorResult)
     assert result.error_type == "api_error"
-    assert "GOOGLE_API_KEY" in result.detail

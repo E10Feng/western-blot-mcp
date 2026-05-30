@@ -127,19 +127,35 @@ Every call returns a JSON object with two sections:
 
 ---
 
+## Supported providers
+
+Any provider supported by [LiteLLM](https://docs.litellm.ai/docs/providers) works — set `MODEL` to a `provider/model-name` string and supply the matching API key.
+
+| Provider | `MODEL` example | API key env var | Notes |
+|---|---|---|---|
+| **Gemini** | `gemini/gemini-3.1-flash-lite` | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | Default |
+| **Anthropic** | `anthropic/claude-sonnet-4-6` | `ANTHROPIC_API_KEY` | Strong reasoning |
+| **OpenAI** | `openai/gpt-4o` | `OPENAI_API_KEY` | |
+| **DeepSeek** | `deepseek/deepseek-chat` | `DEEPSEEK_API_KEY` | Vision support varies by model |
+
+> **Vision required:** The model must support image inputs. All examples above do except DeepSeek's standard chat model — use `deepseek-vl2` for vision tasks.
+
 ## Configuration options
 
 | Environment variable | Default | Description |
 |---|---|---|
-| `GOOGLE_API_KEY` | *(required)* | Your Google AI Studio API key |
-| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Any Gemini model with vision support |
+| `MODEL` | `gemini/gemini-3.1-flash-lite` | Provider and model (`provider/model-name`) |
+| `GEMINI_API_KEY` | — | Gemini API key (`GOOGLE_API_KEY` also accepted) |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `DEEPSEEK_API_KEY` | — | DeepSeek API key |
 
-To use a different model, add `GEMINI_MODEL` to the `env` block in your Claude Desktop config:
+Example Claude Desktop config using Claude claude-sonnet-4-6:
 
 ```json
 "env": {
-  "GOOGLE_API_KEY": "your-key",
-  "GEMINI_MODEL": "gemini-2.0-flash"
+  "MODEL": "anthropic/claude-sonnet-4-6",
+  "ANTHROPIC_API_KEY": "your-anthropic-key"
 }
 ```
 
