@@ -71,7 +71,7 @@ def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
         return ErrorResult(error_type="image_unreadable", detail=str(e))
 
     client = genai.Client(api_key=api_key)
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
     try:
         response = client.models.generate_content(
