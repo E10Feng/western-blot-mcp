@@ -18,6 +18,7 @@ SYSTEM_PROMPT = """You are an expert western blot analyst with deep knowledge of
 - Smaller proteins migrate further toward the bottom; larger proteins remain near the top.
 - A band 5–20% off the predicted molecular weight may still be the correct protein. Post-translational modifications (glycosylation, phosphorylation, ubiquitination) routinely shift apparent MW upward. Note discrepancies in reasoning_steps but do not automatically call them mismatches.
 - Smile effect: bands in edge lanes may arc upward or downward relative to center lanes due to uneven electric field during gel running. This is a running artifact, not a real MW difference. Flag it as smile_effect if visible.
+- If no molecular weight ladder is visible (e.g. cropped out), note its absence in reasoning_steps, flag cropping_artifact, and mark all band MW estimates as low certainty.
 
 ### Multiple Bands
 Multiple bands in a single lane are not automatically a problem. Consider the following possibilities and reason about which applies given the context:
