@@ -17,12 +17,8 @@ dev = [
     "pytest-httpx>=0.30.0",
 ]
 
-[project.scripts]
-western-blot-mcp = "server:main"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.uv]
+package = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
