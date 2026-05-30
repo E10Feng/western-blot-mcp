@@ -1,5 +1,8 @@
 import base64
+import json
 import pathlib
+from unittest.mock import MagicMock
+
 import pytest
 
 
@@ -66,10 +69,6 @@ def test_load_image_from_raw_base64_jpeg():
     image_bytes, mime_type = load_image(jpeg_b64)
     assert image_bytes == jpeg_bytes
     assert mime_type == "image/jpeg"
-
-
-import json
-from unittest.mock import MagicMock
 
 
 VALID_ANALYSIS_RESPONSE = {

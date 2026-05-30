@@ -66,7 +66,11 @@ def analyze(inp: AnalysisInput) -> AnalysisResult | ErrorResult:
     except Exception as e:
         return ErrorResult(error_type="image_unreadable", detail=str(e))
 
-    client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        return ErrorResult(error_type="api_error", detail="GOOGLE_API_KEY environment variable is not set")
+
+    client = genai.Client(api_key=api_key)
     model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 
     try:
