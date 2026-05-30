@@ -99,3 +99,36 @@ def test_error_result_invalid_type():
     from schema import ErrorResult
     with pytest.raises(ValidationError):
         ErrorResult(error_type="unknown_error", detail="...")
+
+
+def test_error_result_with_reasoning_steps():
+    from schema import ErrorResult
+    err = ErrorResult(
+        error_type="api_error",
+        detail="Rate limit exceeded",
+        reasoning_steps=["Attempted API call", "Rate limit error returned"],
+    )
+    assert len(err.reasoning_steps) == 2
+
+
+def test_lane_result_invalid_quality():
+    from schema import LaneResult
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        LaneResult(label="L1", band_count=1, loading_control_detected=True, quality="excellent")
+
+
+def test_analysis_result_empty_lists():
+    from schema import AnalysisResult
+    result = AnalysisResult(
+        bands=[],
+        lanes=[],
+        qc_flags=[],
+        overall_quality="poor",
+        reasoning_steps=["No bands detected"],
+        narrative="Image uninterpretable",
+        overall_interpretation="Inconclusive",
+        certainty="low",
+    )
+    assert result.bands == []
+    assert result.qc_flags == []
