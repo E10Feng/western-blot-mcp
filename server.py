@@ -6,7 +6,7 @@ from schema import AnalysisInput
 mcp = FastMCP("western-blot-mcp")
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True})
 def analyze_western_blot(
     image_source: str,
     antibody_target: str | None = None,
