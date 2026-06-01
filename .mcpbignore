@@ -1,0 +1,13 @@
+.venv/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+docs/
+*.mcpb
+uv.lock
+.gitignore
+CLAUDE.md
+INSTALL.md
+*.txt

@@ -1,0 +1,60 @@
+{
+  "manifest_version": "0.4",
+  "name": "western-blot-mcp",
+  "display_name": "Western Blot Analyzer",
+  "version": "1.0.0",
+  "description": "AI-powered western blot image interpretation with auditable step-by-step reasoning.",
+  "long_description": "Analyzes western blot images and returns structured results: band detection, lane QC, image quality flags, and a step-by-step reasoning chain so researchers can validate every conclusion.\n\nDetects overexposure, loading control problems (including GAPDH invalidity in hypoxia/aging/metabolic studies), ghost bands, smile effect, and image integrity issues — based on peer-reviewed western blot literature.\n\nSupports any vision-capable model via LiteLLM: Gemini (default), Anthropic Claude, OpenAI, and DeepSeek.",
+  "author": {
+    "name": "E10Feng",
+    "url": "https://github.com/E10Feng"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/E10Feng/western-blot-mcp.git"
+  },
+  "documentation": "https://github.com/E10Feng/western-blot-mcp#readme",
+  "support": "https://github.com/E10Feng/western-blot-mcp/issues",
+  "license": "MIT",
+  "keywords": ["biology", "western-blot", "science", "research", "image-analysis"],
+  "server": {
+    "type": "uv",
+    "entry_point": "server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "python", "server.py"],
+      "env": {
+        "GOOGLE_API_KEY": "${user_config.google_api_key}",
+        "MODEL": "${user_config.model}"
+      }
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "linux", "win32"],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  },
+  "tools": [
+    {
+      "name": "analyze_western_blot",
+      "description": "Analyze a western blot image. Returns band detection, lane QC, image quality flags, and step-by-step reasoning."
+    }
+  ],
+  "user_config": {
+    "google_api_key": {
+      "type": "string",
+      "title": "Google API Key",
+      "description": "API key for Gemini (the default model). Get one free at https://aistudio.google.com/apikey. Required when using a Gemini model.",
+      "sensitive": true,
+      "required": false
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "description": "LiteLLM model string: 'gemini/gemini-3.1-flash-lite', 'anthropic/claude-sonnet-4-6', 'openai/gpt-4o'. Must support vision/image inputs.",
+      "default": "gemini/gemini-3.1-flash-lite",
+      "required": false
+    }
+  }
+}
